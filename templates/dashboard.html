@@ -834,6 +834,8 @@
             <div class="nav-item" onclick="showPage('setup')"><span class="nav-icon">&#128218;</span> Setup Guide <span
                     class="nav-badge" id="setup-badge" style="background:var(--primary)">Start</span></div>
             <div class="nav-item" onclick="showPage('pipeline')"><span class="nav-icon">&#9881;</span> Pipeline</div>
+            <div class="nav-item" onclick="showPage('automation')"><span class="nav-icon">&#128338;</span> Automation</div>
+            <div class="nav-item" onclick="showPage('youtube-auth')"><span class="nav-icon">&#128274;</span> YouTube Auth <span class="nav-badge" id="yt-auth-badge" style="display:none;background:var(--red)">Fix</span></div>
             <div class="nav-item" onclick="showPage('news')"><span class="nav-icon">&#128240;</span> News Preview</div>
 
             <div class="nav-section">Channel</div>
@@ -1372,6 +1374,93 @@
                 </div>
             </div>
 
+            <!-- Automation Page -->
+            <div class="page" id="page-automation">
+                <div class="page-header">
+                    <h1>&#128338; Automation & Scheduling</h1>
+                    <p>Schedule daily pipeline runs automatically</p>
+                </div>
+                <div class="card">
+                    <div class="card-title"><span class="icon">&#9202;</span> Daily Schedule</div>
+                    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:end;margin-bottom:16px">
+                        <div class="input-group" style="flex:1;min-width:140px;margin-bottom:0"><label class="input-label">Run Time (24h)</label>
+                            <input class="input" type="time" id="sched-time" value="06:00">
+                        </div>
+                        <div class="input-group" style="flex:1;min-width:140px;margin-bottom:0"><label class="input-label">Mode</label>
+                            <select class="input" id="sched-mode">
+                                <option value="full">Full Pipeline (with Upload)</option>
+                                <option value="dry">Dry Run (no Upload)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-success" onclick="enableSchedule()">&#9654; Enable Daily Schedule</button>
+                        <button class="btn btn-danger" onclick="disableSchedule()">&#9632; Disable Schedule</button>
+                        <button class="btn btn-primary" onclick="runNow()">&#9889; Run Now</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title"><span class="icon">&#128202;</span> Schedule Status</div>
+                    <div id="sched-status">
+                        <div class="key-card"><div class="key-info"><span class="dot dot-yellow" id="sched-dot"></span><span>Scheduler</span></div><span class="badge badge-warn" id="sched-badge">Disabled</span></div>
+                        <div class="key-card"><div class="key-info"><span>Scheduled Time</span></div><span style="color:var(--text2);font-size:13px" id="sched-time-display">--:--</span></div>
+                        <div class="key-card"><div class="key-info"><span>Next Run</span></div><span style="color:var(--text2);font-size:13px" id="sched-next">Not scheduled</span></div>
+                        <div class="key-card"><div class="key-info"><span>Last Run</span></div><span style="color:var(--text2);font-size:13px" id="sched-last">Never</span></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title"><span class="icon">&#128196;</span> Run History</div>
+                    <div id="sched-history">
+                        <div style="color:var(--text3)">No runs yet.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- YouTube Auth Page -->
+            <div class="page" id="page-youtube-auth">
+                <div class="page-header">
+                    <h1>&#128274; YouTube Authorization</h1>
+                    <p>Fix OAuth errors and manage YouTube authentication</p>
+                </div>
+                <div class="card" style="border-color:rgba(255,68,68,0.3);background:rgba(255,68,68,0.05)">
+                    <div class="card-title" style="color:var(--red)"><span class="icon">&#9888;</span> Common Error: "Access blocked" / Error 403</div>
+                    <p style="font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:16px">If you see <b>"Access blocked: Daily News Channel has not completed the Google verification process"</b>, your OAuth consent screen is in <b>Testing mode</b>. Follow these steps to fix it:</p>
+                    <ol style="padding-left:24px;font-size:14px;color:var(--text2);line-height:2">
+                        <li>Go to <a href="https://console.cloud.google.com/apis/credentials/consent" target="_blank" style="color:var(--primary)">Google Cloud Console &gt; OAuth consent screen</a></li>
+                        <li>Scroll to <b>"Test users"</b> section and click <b>"+ Add Users"</b></li>
+                        <li>Add your email: <code style="background:rgba(108,99,255,0.15);padding:2px 8px;border-radius:4px">techlearning538@gmail.com</code></li>
+                        <li>Click <b>Save</b></li>
+                        <li>Come back here and click <b>"Re-authorize YouTube"</b> below</li>
+                    </ol>
+                </div>
+                <div class="card">
+                    <div class="card-title"><span class="icon">&#128275;</span> Authorization Status</div>
+                    <div id="yt-auth-status">
+                        <div style="color:var(--text3)">Checking...</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title"><span class="icon">&#128268;</span> Authorize YouTube</div>
+                    <p style="font-size:14px;color:var(--text2);margin-bottom:16px">Click the button below to generate an authorization URL. Open it in your browser, sign in, approve access, then paste the authorization code back here.</p>
+                    <div class="btn-group" style="margin-bottom:16px">
+                        <button class="btn btn-primary" onclick="generateAuthUrl()">&#128279; Generate Auth URL</button>
+                        <button class="btn btn-danger" onclick="resetToken()">&#128465; Reset Token</button>
+                    </div>
+                    <div id="yt-auth-url-box" style="display:none;margin-bottom:16px">
+                        <label class="input-label">1. Open this URL in your browser:</label>
+                        <div style="background:rgba(0,0,0,0.3);padding:12px;border-radius:8px;word-break:break-all;font-size:12px;margin-bottom:12px">
+                            <a id="yt-auth-url" href="#" target="_blank" style="color:var(--primary)"></a>
+                        </div>
+                        <label class="input-label">2. After authorizing, you'll be redirected to localhost. Copy the <code>code=</code> parameter from the URL:</label>
+                        <div style="display:flex;gap:8px;margin-top:8px">
+                            <input class="input" id="yt-auth-code" placeholder="Paste the authorization code here...">
+                            <button class="btn btn-success" onclick="exchangeCode()">Submit</button>
+                        </div>
+                    </div>
+                    <div id="yt-auth-result" style="margin-top:12px"></div>
+                </div>
+            </div>
+
             <!-- System Health Page -->
             <div class="page" id="page-health">
                 <div class="page-header">
@@ -1408,6 +1497,8 @@
             if (id === 'channel') loadChannel();
             if (id === 'videos') loadVideos();
             if (id === 'setup') loadWizardStatus();
+            if (id === 'automation') loadScheduleStatus();
+            if (id === 'youtube-auth') loadYoutubeAuthStatus();
         }
 
         function toast(msg, dur = 3000) {
@@ -1674,8 +1765,103 @@
             loadDashboard();
         }
 
+        // ── Automation / Scheduler ────────────────────────────────
+        async function loadScheduleStatus() {
+            const d = await api('/api/schedule/status');
+            const dot = document.getElementById('sched-dot');
+            const badge = document.getElementById('sched-badge');
+            if (d.enabled) {
+                dot.className = 'dot dot-green';
+                badge.className = 'badge badge-ok'; badge.textContent = 'Enabled';
+            } else {
+                dot.className = 'dot dot-yellow';
+                badge.className = 'badge badge-warn'; badge.textContent = 'Disabled';
+            }
+            document.getElementById('sched-time-display').textContent = d.schedule_time || '--:--';
+            document.getElementById('sched-next').textContent = d.next_run ? new Date(d.next_run).toLocaleString() : 'Not scheduled';
+            document.getElementById('sched-last').textContent = d.last_run ? new Date(d.last_run).toLocaleString() : 'Never';
+            if (d.schedule_time) document.getElementById('sched-time').value = d.schedule_time;
+            if (d.dry_run) document.getElementById('sched-mode').value = 'dry';
+            if (d.history?.length) {
+                document.getElementById('sched-history').innerHTML = d.history.slice(-10).reverse().map(h =>
+                    `<div class="key-card"><div class="key-info"><span class="dot ${h.status === 'started' ? 'dot-green' : 'dot-yellow'}"></span><span>${new Date(h.time).toLocaleString()}</span></div><span class="badge badge-info">${h.status}</span></div>`
+                ).join('');
+            }
+        }
+        async function enableSchedule() {
+            const time = document.getElementById('sched-time').value || '06:00';
+            const dry = document.getElementById('sched-mode').value === 'dry';
+            const d = await api('/api/schedule/set', { method: 'POST', body: JSON.stringify({ enabled: true, time, dry_run: dry }) });
+            toast(d.message || 'Schedule enabled!');
+            loadScheduleStatus();
+        }
+        async function disableSchedule() {
+            const d = await api('/api/schedule/set', { method: 'POST', body: JSON.stringify({ enabled: false, time: '06:00', dry_run: false }) });
+            toast(d.message || 'Schedule disabled');
+            loadScheduleStatus();
+        }
+        async function runNow() {
+            const d = await api('/api/schedule/run-now', { method: 'POST' });
+            if (d.status === 'started') {
+                toast('Pipeline triggered! Check Pipeline page for progress.');
+                pollPipeline();
+            } else {
+                toast(d.detail || d.message || 'Error');
+            }
+        }
+
+        // ── YouTube Auth ─────────────────────────────────────────────
+        async function loadYoutubeAuthStatus() {
+            const d = await api('/api/youtube/auth-status');
+            let html = '';
+            html += `<div class="key-card"><div class="key-info"><span class="dot ${d.has_credentials ? 'dot-green' : 'dot-red'}"></span><span>OAuth Credentials</span></div><span class="badge ${d.has_credentials ? 'badge-ok' : 'badge-err'}">${d.has_credentials ? 'Configured' : 'Not Set'}</span></div>`;
+            html += `<div class="key-card"><div class="key-info"><span class="dot ${d.has_token ? 'dot-green' : 'dot-yellow'}"></span><span>Auth Token</span></div><span class="badge ${d.has_token ? 'badge-ok' : 'badge-warn'}">${d.has_token ? 'Present' : 'Missing'}</span></div>`;
+            html += `<div class="key-card"><div class="key-info"><span class="dot ${d.token_valid ? 'dot-green' : 'dot-red'}"></span><span>Token Valid</span></div><span class="badge ${d.token_valid ? 'badge-ok' : 'badge-err'}">${d.token_valid ? 'Yes' : 'No'}</span></div>`;
+            html += `<div class="key-card"><div class="key-info"><span class="dot ${d.ready ? 'dot-green' : 'dot-red'}"></span><span>Upload Ready</span></div><span class="badge ${d.ready ? 'badge-ok' : 'badge-err'}">${d.ready ? 'Ready' : 'Not Ready'}</span></div>`;
+            if (d.token_error) {
+                html += `<div style="margin-top:12px;padding:12px;background:rgba(255,68,68,0.1);border-radius:8px;font-size:13px;color:var(--red)">Error: ${d.token_error}</div>`;
+            }
+            document.getElementById('yt-auth-status').innerHTML = html;
+            const badge = document.getElementById('yt-auth-badge');
+            if (badge) { badge.style.display = d.ready ? 'none' : ''; }
+        }
+        async function generateAuthUrl() {
+            const d = await api('/api/youtube/generate-auth-url', { method: 'POST' });
+            if (d.auth_url) {
+                document.getElementById('yt-auth-url').href = d.auth_url;
+                document.getElementById('yt-auth-url').textContent = d.auth_url;
+                document.getElementById('yt-auth-url-box').style.display = 'block';
+                document.getElementById('yt-auth-result').innerHTML = '<div class="wizard-tip">Open the URL above, sign in, approve, then paste the code= parameter from the redirect URL.</div>';
+            } else {
+                document.getElementById('yt-auth-result').innerHTML = `<div style="color:var(--red)">${d.message || 'Error generating URL'}</div>`;
+            }
+        }
+        async function exchangeCode() {
+            const code = document.getElementById('yt-auth-code').value.trim();
+            if (!code) { toast('Please paste the authorization code'); return; }
+            const d = await api('/api/youtube/exchange-code', { method: 'POST', body: JSON.stringify({ code }) });
+            if (d.status === 'ok') {
+                document.getElementById('yt-auth-result').innerHTML = `<div style="color:var(--green);font-weight:600">${d.message}</div>`;
+                document.getElementById('yt-auth-url-box').style.display = 'none';
+                loadYoutubeAuthStatus();
+            } else {
+                document.getElementById('yt-auth-result').innerHTML = `<div style="color:var(--red)">${d.message}</div>`;
+            }
+        }
+        async function resetToken() {
+            if (!confirm('Reset YouTube token? You will need to re-authorize.')) return;
+            const d = await api('/api/youtube/reset-token', { method: 'POST' });
+            toast(d.message);
+            loadYoutubeAuthStatus();
+        }
+
         // ── Init ────────────────────────────────────────────────────
         loadDashboard();
+        (async () => {
+            const yt = await api('/api/youtube/auth-status');
+            const badge = document.getElementById('yt-auth-badge');
+            if (badge && !yt.ready) badge.style.display = '';
+        })();
     </script>
 </body>
 
