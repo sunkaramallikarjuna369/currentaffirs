@@ -1,0 +1,12 @@
+feedparser>=6.0
+newspaper4k>=0.9
+google-generativeai>=0.8
+edge-tts>=6.1
+Pillow>=10.0
+moviepy>=1.0
+google-auth-oauthlib>=1.2
+google-api-python-client>=2.100
+python-dotenv>=1.0
+python-telegram-bot>=21.0
+requests>=2.31
+lxml_html_clean>=0.1

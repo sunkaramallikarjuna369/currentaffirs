@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Current Affairs Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #0a0a1a;
+            --bg2: #111128;
+            --bg3: #1a1a3e;
+            --card: rgba(20, 20, 50, 0.8);
+            --card-border: rgba(100, 100, 255, 0.15);
+            --primary: #6C63FF;
+            --primary-glow: rgba(108, 99, 255, 0.3);
+            --accent: #FF6584;
+            --accent2: #00D4AA;
+            --red: #FF4444;
+            --green: #00C853;
+            --yellow: #FFD600;
+            --blue: #448AFF;
+            --text: #E8E8F0;
+            --text2: #9999BB;
+            --text3: #666688;
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(ellipse at 20% 50%, rgba(108, 99, 255, 0.08) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(255, 101, 132, 0.06) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Layout */
+        .app {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+            z-index: 1;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: var(--bg2);
+            border-right: 1px solid var(--card-border);
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            overflow-y: auto;
+        }
+
+        .main {
+            flex: 1;
+            margin-left: 260px;
+            padding: 32px;
+            overflow-y: auto;
+        }
+
+        /* Sidebar */
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 12px;
+            margin-bottom: 32px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .logo-text {
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .logo-text small {
+            font-size: 11px;
+            color: var(--text2);
+            font-weight: 400;
+        }
+
+        .nav-section {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text3);
+            padding: 0 12px;
+            margin: 20px 0 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text2);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: rgba(108, 99, 255, 0.1);
+            color: var(--text);
+        }
+
+        .nav-item.active {
+            background: rgba(108, 99, 255, 0.15);
+            color: var(--primary);
+            border: 1px solid rgba(108, 99, 255, 0.2);
+        }
+
+        .nav-icon {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            background: var(--accent);
+            color: white;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .card:hover {
+            border-color: rgba(108, 99, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title .icon {
+            font-size: 20px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+
+        .stat-card.purple::before {
+            background: linear-gradient(90deg, var(--primary), #9C27B0);
+        }
+
+        .stat-card.pink::before {
+            background: linear-gradient(90deg, var(--accent), #FF8A65);
+        }
+
+        .stat-card.green::before {
+            background: linear-gradient(90deg, var(--accent2), #69F0AE);
+        }
+
+        .stat-card.blue::before {
+            background: linear-gradient(90deg, var(--blue), #82B1FF);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text2);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 800;
+        }
+
+        .stat-sub {
+            font-size: 12px;
+            color: var(--text3);
+            margin-top: 4px;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #8B5CF6);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px var(--primary-glow);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--red), #FF6B6B);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--green), var(--accent2));
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--card-border);
+            color: var(--text);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 12px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* Inputs */
+        .input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-sm);
+            padding: 12px 16px;
+            color: var(--text);
+            font-size: 14px;
+            font-family: inherit;
+            transition: border 0.2s;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-label {
+            font-size: 12px;
+            color: var(--text2);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Status badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-ok {
+            background: rgba(0, 200, 83, 0.15);
+            color: var(--green);
+        }
+
+        .badge-warn {
+            background: rgba(255, 214, 0, 0.15);
+            color: var(--yellow);
+        }
+
+        .badge-err {
+            background: rgba(255, 68, 68, 0.15);
+            color: var(--red);
+        }
+
+        .badge-info {
+            background: rgba(108, 99, 255, 0.15);
+            color: var(--primary);
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .dot-green {
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green);
+        }
+
+        .dot-red {
+            background: var(--red);
+            box-shadow: 0 0 8px var(--red);
+        }
+
+        .dot-yellow {
+            background: var(--yellow);
+            box-shadow: 0 0 8px var(--yellow);
+        }
+
+        /* Pipeline Progress */
+        .pipeline-steps {
+            display: flex;
+            gap: 4px;
+            margin: 16px 0;
+        }
+
+        .pipeline-step {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+
+        .pipeline-step.done {
+            background: var(--green);
+        }
+
+        .pipeline-step.active {
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .pipeline-step-labels {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 4px;
+            margin-top: 8px;
+        }
+
+        .step-label {
+            font-size: 10px;
+            color: var(--text3);
+            text-align: center;
+        }
+
+        .step-label.active {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .step-label.done {
+            color: var(--green);
+        }
+
+        /* Log */
+        .log-box {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            max-height: 250px;
+            overflow-y: auto;
+            font-family: 'Cascadia Code', 'Fira Code', monospace;
+            font-size: 12px;
+            line-height: 1.8;
+        }
+
+        .log-line {
+            color: var(--text2);
+        }
+
+        .log-time {
+            color: var(--text3);
+            margin-right: 8px;
+        }
+
+        /* News list */
+        .news-item {
+            display: flex;
+            align-items: start;
+            gap: 12px;
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .news-item:last-child {
+            border: none;
+        }
+
+        .news-num {
+            background: var(--primary);
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .news-title {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .news-source {
+            font-size: 11px;
+            color: var(--text3);
+            margin-top: 4px;
+        }
+
+        /* Table */
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th {
+            text-align: left;
+            padding: 12px 16px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text3);
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .table td {
+            padding: 12px 16px;
+            font-size: 13px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        /* Page views */
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .page-header {
+            margin-bottom: 28px;
+        }
+
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .page-header p {
+            color: var(--text2);
+            font-size: 14px;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--bg3);
+            border: 1px solid var(--card-border);
+            padding: 14px 24px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            z-index: 999;
+            display: none;
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: none;
+                opacity: 1;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--card-border);
+            border-radius: 3px;
+        }
+
+        /* Key setup cards */
+        .key-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: var(--radius-sm);
+            margin-bottom: 10px;
+        }
+
+        .key-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .key-icon {
+            font-size: 24px;
+        }
+
+        /* Setup wizard */
+        .wizard-step {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            margin-bottom: 16px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .wizard-step.completed {
+            border-color: rgba(0, 200, 83, 0.3);
+        }
+
+        .wizard-step.active-step {
+            border-color: rgba(108, 99, 255, 0.4);
+            box-shadow: 0 0 20px rgba(108, 99, 255, 0.1);
+        }
+
+        .wizard-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px 24px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .wizard-header:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .wizard-num {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--bg3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .wizard-step.completed .wizard-num {
+            background: var(--green);
+            color: white;
+        }
+
+        .wizard-step.active-step .wizard-num {
+            background: var(--primary);
+            color: white;
+        }
+
+        .wizard-title {
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .wizard-subtitle {
+            font-size: 12px;
+            color: var(--text3);
+            margin-top: 2px;
+        }
+
+        .wizard-arrow {
+            margin-left: auto;
+            color: var(--text3);
+            transition: transform 0.3s;
+            font-size: 18px;
+        }
+
+        .wizard-step.open .wizard-arrow {
+            transform: rotate(180deg);
+        }
+
+        .wizard-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+        }
+
+        .wizard-step.open .wizard-body {
+            max-height: 800px;
+        }
+
+        .wizard-content {
+            padding: 0 24px 24px;
+        }
+
+        .wizard-ol {
+            list-style: none;
+            counter-reset: step;
+            padding: 0;
+        }
+
+        .wizard-ol li {
+            counter-increment: step;
+            padding: 12px 0 12px 40px;
+            position: relative;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .wizard-ol li:last-child {
+            border: none;
+        }
+
+        .wizard-ol li::before {
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 12px;
+            width: 28px;
+            height: 28px;
+            background: rgba(108, 99, 255, 0.15);
+            color: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .wizard-tip {
+            background: rgba(108, 99, 255, 0.08);
+            border-left: 3px solid var(--primary);
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 12px;
+            font-size: 13px;
+            color: var(--text2);
+        }
+
+        .wizard-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, var(--primary), #8B5CF6);
+            color: white;
+            padding: 10px 20px;
+            border-radius: var(--radius-sm);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            margin-top: 12px;
+            transition: all 0.2s;
+        }
+
+        .wizard-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+
+        .progress-bar {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 24px;
+        }
+
+        .progress-seg {
+            flex: 1;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .progress-seg.done {
+            background: var(--green);
+        }
+
+        .progress-seg.current {
+            background: var(--primary);
+            animation: pulse 1.5s infinite;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+
+            .main {
+                margin-left: 0;
+                padding: 16px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">&#9654;</div>
+                <div class="logo-text">Current Affairs<br><small>YouTube Platform</small></div>
+            </div>
+
+            <div class="nav-section">Main</div>
+            <div class="nav-item active" onclick="showPage('dashboard')"><span class="nav-icon">&#9635;</span> Dashboard
+            </div>
+            <div class="nav-item" onclick="showPage('setup')"><span class="nav-icon">&#128218;</span> Setup Guide <span
+                    class="nav-badge" id="setup-badge" style="background:var(--primary)">Start</span></div>
+            <div class="nav-item" onclick="showPage('pipeline')"><span class="nav-icon">&#9881;</span> Pipeline</div>
+            <div class="nav-item" onclick="showPage('news')"><span class="nav-icon">&#128240;</span> News Preview</div>
+
+            <div class="nav-section">Channel</div>
+            <div class="nav-item" onclick="showPage('channel')"><span class="nav-icon">&#128250;</span> Channel</div>
+            <div class="nav-item" onclick="showPage('videos')"><span class="nav-icon">&#127909;</span> Videos</div>
+            <div class="nav-item" onclick="showPage('analytics')"><span class="nav-icon">&#128200;</span> Analytics
+            </div>
+
+            <div class="nav-section">Tools</div>
+            <div class="nav-item" onclick="showPage('ai')"><span class="nav-icon">&#129302;</span> AI Suggestions</div>
+            <div class="nav-item" onclick="showPage('outputs')"><span class="nav-icon">&#128193;</span> Output Files
+            </div>
+
+            <div class="nav-section">Settings</div>
+            <div class="nav-item" onclick="showPage('keys')"><span class="nav-icon">&#128273;</span> API Keys <span
+                    class="nav-badge" id="keys-badge">!</span></div>
+            <div class="nav-item" onclick="showPage('health')"><span class="nav-icon">&#9889;</span> System Health</div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="main">
+
+            <!-- Dashboard Page -->
+            <div class="page active" id="page-dashboard">
+                <div class="page-header">
+                    <h1>&#128640; Dashboard</h1>
+                    <p>Your automated YouTube current affairs channel — 100% free</p>
+                </div>
+
+                <div class="stats-grid" id="dash-stats">
+                    <div class="stat-card purple">
+                        <div class="stat-label">Pipeline</div>
+                        <div class="stat-value" id="dash-pipeline">Idle</div>
+                        <div class="stat-sub">Status</div>
+                    </div>
+                    <div class="stat-card pink">
+                        <div class="stat-label">Today's News</div>
+                        <div class="stat-value" id="dash-news">-</div>
+                        <div class="stat-sub">articles available</div>
+                    </div>
+                    <div class="stat-card green">
+                        <div class="stat-label">API Keys</div>
+                        <div class="stat-value" id="dash-keys">-</div>
+                        <div class="stat-sub">configured</div>
+                    </div>
+                    <div class="stat-card blue">
+                        <div class="stat-label">Output Size</div>
+                        <div class="stat-value" id="dash-disk">-</div>
+                        <div class="stat-sub">MB generated</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title"><span class="icon">&#9889;</span> Quick Actions</div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="runPipeline(true)">&#9654; Dry Run (Local
+                            Only)</button>
+                        <button class="btn btn-success" onclick="runPipeline(false)">&#128640; Full Pipeline +
+                            Upload</button>
+                        <button class="btn btn-outline" onclick="showPage('news')">&#128240; Preview News</button>
+                        <button class="btn btn-outline" onclick="showPage('ai')">&#129302; AI Suggestions</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title"><span class="icon">&#128203;</span> Getting Started</div>
+                    <div id="setup-checklist"></div>
+                    <button class="btn btn-primary" style="margin-top:12px" onclick="showPage('setup')">&#128218; Open
+                        Full Setup Guide</button>
+                </div>
+            </div>
+
+            <!-- Setup Guide Page -->
+            <div class="page" id="page-setup">
+                <div class="page-header">
+                    <h1>&#128218; Step-by-Step Setup Guide</h1>
+                    <p>Follow these 5 steps to get your channel running — all 100% FREE, takes ~10 minutes</p>
+                </div>
+                <div class="progress-bar" id="wizard-progress"></div>
+
+                <!-- Step 1: Gemini -->
+                <div class="wizard-step active-step open" id="ws-1">
+                    <div class="wizard-header" onclick="toggleStep(1)">
+                        <div class="wizard-num">1</div>
+                        <div>
+                            <div class="wizard-title">Get Google Gemini API Key</div>
+                            <div class="wizard-subtitle">FREE — 15 requests/min, 1M tokens/day (for AI script writing)
+                            </div>
+                        </div>
+                        <div class="wizard-arrow">&#9660;</div>
+                    </div>
+                    <div class="wizard-body">
+                        <div class="wizard-content">
+                            <ol class="wizard-ol">
+                                <li>Click the button below to open <b>Google AI Studio</b></li>
+                                <li>Sign in with your <b>Google account</b> (same as Gmail)</li>
+                                <li>Click the <b>"Create API Key"</b> button (blue button, top area)</li>
+                                <li>Select any Google Cloud project, or click <b>"Create API key in new project"</b>
+                                </li>
+                                <li>Your API key will appear — click <b>"Copy"</b> to copy it</li>
+                                <li>Paste the key in the field below and click Save</li>
+                            </ol>
+                            <a href="https://aistudio.google.com/apikey" target="_blank" class="wizard-link">&#128279;
+                                Open Google AI Studio</a>
+                            <div style="margin-top:16px">
+                                <div class="input-group"><label class="input-label"><span class="dot"
+                                            id="wdot-gemini"></span> Paste Gemini API Key</label>
+                                    <input class="input" id="wkey-gemini" placeholder="AIza..." type="password">
+                                </div>
+                            </div>
+                            <button class="btn btn-success btn-sm" onclick="saveWizardKey('gemini')">&#128190; Save
+                                Key</button>
+                            <div class="wizard-tip">&#128161; This key is used to generate AI-written news scripts using
+                                Google's Gemini model. Completely free within limits.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: YouTube -->
+                <div class="wizard-step" id="ws-2">
+                    <div class="wizard-header" onclick="toggleStep(2)">
+                        <div class="wizard-num">2</div>
+                        <div>
+                            <div class="wizard-title">Set Up YouTube Data API v3</div>
+                            <div class="wizard-subtitle">FREE — 10,000 quota units/day (for uploading videos)</div>
+                        </div>
+                        <div class="wizard-arrow">&#9660;</div>
+                    </div>
+                    <div class="wizard-body">
+                        <div class="wizard-content">
+                            <ol class="wizard-ol">
+                                <li>Click below to open <b>Google Cloud Console</b></li>
+                                <li>If asked, create a <b>new project</b> (name it anything, e.g. "YouTube Channel")
+                                </li>
+                                <li>Click the <b>"Enable"</b> button to activate YouTube Data API v3</li>
+                                <li>In the left menu, go to <b>"APIs & Services" &gt; "Credentials"</b></li>
+                                <li>Click <b>"+ CREATE CREDENTIALS"</b> at the top &gt; choose <b>"OAuth 2.0 Client
+                                        ID"</b></li>
+                                <li>If asked to configure consent screen: choose <b>"External"</b>, fill your app name
+                                    and email, click through to finish</li>
+                                <li>On the consent screen settings, go to <b>"Test users"</b> and add your own Gmail
+                                    address</li>
+                                <li>Back to Credentials &gt; Create OAuth Client: Application type = <b>"Desktop
+                                        app"</b></li>
+                                <li>Copy the <b>Client ID</b> and <b>Client Secret</b> shown and paste below</li>
+                            </ol>
+                            <a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com"
+                                target="_blank" class="wizard-link">&#128279; Open Google Cloud Console</a>
+                            <div style="margin-top:16px">
+                                <div class="input-group"><label class="input-label"><span class="dot"
+                                            id="wdot-yt-id"></span> YouTube Client ID</label>
+                                    <input class="input" id="wkey-yt-id" placeholder="xxxx.apps.googleusercontent.com"
+                                        type="password">
+                                </div>
+                                <div class="input-group"><label class="input-label"><span class="dot"
+                                            id="wdot-yt-secret"></span> YouTube Client Secret</label>
+                                    <input class="input" id="wkey-yt-secret" placeholder="GOCSPX-..." type="password">
+                                </div>
+                            </div>
+                            <button class="btn btn-success btn-sm" onclick="saveWizardKey('youtube')">&#128190; Save
+                                Credentials</button>
+                            <div class="wizard-tip">&#128161; The YouTube API allows uploading videos, managing
+                                playlists, and reading analytics. Free quota = ~6 uploads/day.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Telegram -->
+                <div class="wizard-step" id="ws-3">
+                    <div class="wizard-header" onclick="toggleStep(3)">
+                        <div class="wizard-num">3</div>
+                        <div>
+                            <div class="wizard-title">Create Telegram Bot</div>
+                            <div class="wizard-subtitle">FREE — Unlimited messages (for pipeline notifications)</div>
+                        </div>
+                        <div class="wizard-arrow">&#9660;</div>
+                    </div>
+                    <div class="wizard-body">
+                        <div class="wizard-content">
+                            <ol class="wizard-ol">
+                                <li>Open <b>Telegram</b> on your phone or desktop</li>
+                                <li>Search for <b>@BotFather</b> and start a chat</li>
+                                <li>Send the command: <code>/newbot</code></li>
+                                <li>Choose a <b>name</b> for your bot (e.g. "My News Bot")</li>
+                                <li>Choose a <b>username</b> ending in "bot" (e.g. "mynews_daily_bot")</li>
+                                <li>BotFather will give you a <b>Bot Token</b> — copy and paste it below</li>
+                                <li>Now search for <b>@userinfobot</b> in Telegram and send <code>/start</code></li>
+                                <li>It will reply with your <b>Chat ID</b> (a number) — paste that below too</li>
+                                <li><b>Important:</b> Open a chat with your new bot and send any message (to activate
+                                    it)</li>
+                            </ol>
+                            <a href="https://t.me/BotFather" target="_blank" class="wizard-link">&#128279; Open
+                                BotFather in Telegram</a>
+                            <a href="https://t.me/userinfobot" target="_blank" class="wizard-link"
+                                style="margin-left:8px;background:linear-gradient(135deg,var(--accent2),#69F0AE)">&#128279;
+                                Get Chat ID</a>
+                            <div style="margin-top:16px">
+                                <div class="input-group"><label class="input-label"><span class="dot"
+                                            id="wdot-tg-token"></span> Bot Token</label>
+                                    <input class="input" id="wkey-tg-token" placeholder="123456:ABC-DEF..."
+                                        type="password">
+                                </div>
+                                <div class="input-group"><label class="input-label"><span class="dot"
+                                            id="wdot-tg-chat"></span> Chat ID</label>
+                                    <input class="input" id="wkey-tg-chat" placeholder="123456789">
+                                </div>
+                            </div>
+                            <button class="btn btn-success btn-sm" onclick="saveWizardKey('telegram')">&#128190; Save
+                                Telegram</button>
+                            <div class="wizard-tip">&#128161; Telegram sends you notifications when the pipeline runs,
+                                completes, or fails. Free and instant.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4: WhatsApp -->
+                <div class="wizard-step" id="ws-4">
+                    <div class="wizard-header" onclick="toggleStep(4)">
+                        <div class="wizard-num">4</div>
+                        <div>
+                            <div class="wizard-title">Set Up WhatsApp Notifications</div>
+                            <div class="wizard-subtitle">FREE — Via CallMeBot (optional, for WhatsApp alerts)</div>
+                        </div>
+                        <div class="wizard-arrow">&#9660;</div>
+                    </div>
+                    <div class="wizard-body">
+                        <div class="wizard-content">
+                            <ol class="wizard-ol">
+                                <li>Save this phone number in your contacts: <b>+34 644 71 98 38</b> (name it
+                                    "CallMeBot")</li>
+                                <li>Open WhatsApp and send this exact message to that
+                                    number:<br><code>I allow callmebot to send me messages</code></li>
+                                <li>You'll receive a reply with your <b>API Key</b> — copy it</li>
+                                <li>Enter your <b>phone number</b> (with country code, no +) and the <b>API key</b>
+                                    below</li>
+                            </ol>
+                            <a href="https://www.callmebot.com/blog/free-api-whatsapp-messages/" target="_blank"
+                                class="wizard-link" style="background:linear-gradient(135deg,#25D366,#128C7E)">&#128279;
+                                CallMeBot Setup Guide</a>
+                            <div style="margin-top:16px">
+                                <div class="input-group"><label class="input-label"><span class="dot"
+                                            id="wdot-wa-phone"></span> Phone Number (with country code)</label>
+                                    <input class="input" id="wkey-wa-phone" placeholder="919876543210">
+                                </div>
+                                <div class="input-group"><label class="input-label"><span class="dot"
+                                            id="wdot-wa-key"></span> CallMeBot API Key</label>
+                                    <input class="input" id="wkey-wa-key" placeholder="123456">
+                                </div>
+                            </div>
+                            <button class="btn btn-success btn-sm" onclick="saveWizardKey('whatsapp')">&#128190; Save
+                                WhatsApp</button>
+                            <div class="wizard-tip">&#128161; WhatsApp notifications are optional. You'll get alerts on
+                                your phone whenever a video is uploaded. 100% free via CallMeBot.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 5: Run Pipeline -->
+                <div class="wizard-step" id="ws-5">
+                    <div class="wizard-header" onclick="toggleStep(5)">
+                        <div class="wizard-num">5</div>
+                        <div>
+                            <div class="wizard-title">Run Your First Pipeline!</div>
+                            <div class="wizard-subtitle">Test locally, then go live with uploads</div>
+                        </div>
+                        <div class="wizard-arrow">&#9660;</div>
+                    </div>
+                    <div class="wizard-body">
+                        <div class="wizard-content">
+                            <ol class="wizard-ol">
+                                <li>Click <b>"Dry Run"</b> below to test the pipeline locally (no upload)</li>
+                                <li>Check the <b>Pipeline</b> page for live progress</li>
+                                <li>Once dry run succeeds, click <b>"Full Pipeline"</b> to generate and upload a real
+                                    video!</li>
+                                <li>Go to <b>Dashboard</b> to schedule daily automatic runs</li>
+                            </ol>
+                            <div class="btn-group" style="margin-top:12px">
+                                <button class="btn btn-primary" onclick="runPipeline(true)">&#9654; Dry Run
+                                    (Test)</button>
+                                <button class="btn btn-success" onclick="runPipeline(false)">&#128640; Full Pipeline +
+                                    Upload</button>
+                            </div>
+                            <div class="wizard-tip">&#128161; Dry run does Steps 1-5 locally (news, script, voiceover,
+                                video, thumbnail) without uploading. Perfect for testing!</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pipeline Page -->
+            <div class="page" id="page-pipeline">
+                <div class="page-header">
+                    <h1>&#9881; Pipeline Control</h1>
+                    <p>Run the full video generation pipeline</p>
+                </div>
+                <div class="card">
+                    <div class="card-title"><span class="icon">&#128295;</span> Run Pipeline</div>
+                    <div style="display:flex; gap:16px; margin-bottom:16px; flex-wrap:wrap;">
+                        <div class="input-group" style="flex:1;min-width:120px"><label class="input-label">Start
+                                Step</label><select class="input" id="step-start">
+                                <option value="1">1 - Fetch News</option>
+                                <option value="2">2 - AI Script</option>
+                                <option value="3">3 - Voiceover</option>
+                                <option value="4">4 - Build Video</option>
+                                <option value="5">5 - Thumbnail</option>
+                                <option value="6">6 - Upload</option>
+                                <option value="7">7 - Cross-post</option>
+                                <option value="8">8 - Notify</option>
+                            </select></div>
+                        <div class="input-group" style="flex:1;min-width:120px"><label class="input-label">End
+                                Step</label><select class="input" id="step-end">
+                                <option value="1">1 - Fetch News</option>
+                                <option value="2">2 - AI Script</option>
+                                <option value="3">3 - Voiceover</option>
+                                <option value="4">4 - Build Video</option>
+                                <option value="5">5 - Thumbnail</option>
+                                <option value="6">6 - Upload</option>
+                                <option value="7">7 - Cross-post</option>
+                                <option value="8" selected>8 - Notify</option>
+                            </select></div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="runPipelineCustom(true)">&#9654; Dry Run</button>
+                        <button class="btn btn-success" onclick="runPipelineCustom(false)">&#128640; Full Run</button>
+                        <button class="btn btn-danger" onclick="stopPipeline()">&#9632; Stop</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title"><span class="icon">&#128202;</span> Progress — <span id="pipe-status"
+                            class="badge badge-info">Idle</span></div>
+                    <div class="pipeline-steps" id="pipe-steps"></div>
+                    <div class="pipeline-step-labels" id="pipe-labels"></div>
+                    <div id="pipe-step-name" style="margin-top:12px;font-size:14px;color:var(--text2)"></div>
+                </div>
+                <div class="card">
+                    <div class="card-title"><span class="icon">&#128196;</span> Live Log</div>
+                    <div class="log-box" id="pipe-log">
+                        <div class="log-line" style="color:var(--text3)">Pipeline has not been run yet.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- News Page -->
+            <div class="page" id="page-news">
+                <div class="page-header">
+                    <h1>&#128240; News Preview</h1>
+                    <p>Latest headlines from Google News (free RSS)</p>
+                </div>
+                <div class="card">
+                    <div class="btn-group" style="margin-bottom:16px"><button class="btn btn-primary"
+                            onclick="loadNews()">&#128260; Refresh News</button></div>
+                    <div id="news-list">
+                        <div style="color:var(--text3)">Click "Refresh News" to fetch latest headlines.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Channel Page -->
+            <div class="page" id="page-channel">
+                <div class="page-header">
+                    <h1>&#128250; Channel Management</h1>
+                    <p>Create and configure your YouTube channel</p>
+                </div>
+                <div class="card">
+                    <div class="card-title"><span class="icon">&#128100;</span> Channel Info</div>
+                    <div id="channel-info">
+                        <div style="color:var(--text3)">Loading...</div>
+                    </div>
+                    <button class="btn btn-outline btn-sm" style="margin-top:12px" onclick="loadChannel()">&#128260;
+                        Refresh</button>
+                </div>
+                <div class="card">
+                    <div class="card-title"><span class="icon">&#127912;</span> Update Branding</div>
+                    <div class="input-group"><label class="input-label">Channel Name</label><input class="input"
+                            id="brand-title" value="Daily Current Affairs"></div>
+                    <div class="input-group"><label class="input-label">Description</label><textarea class="input"
+                            id="brand-desc" rows="4" placeholder="Channel description..."></textarea></div>
+                    <div class="input-group"><label class="input-label">Keywords (space separated)</label><input
+                            class="input" id="brand-keywords" value="current affairs daily news india news today"></div>
+                    <button class="btn btn-primary" onclick="updateBranding()">&#128190; Update Branding</button>
+                </div>
+                <div class="card">
+                    <div class="card-title"><span class="icon">&#128203;</span> Playlists</div>
+                    <button class="btn btn-success" onclick="createPlaylist()">+ Create Monthly Playlist</button>
+                </div>
+            </div>
+
+            <!-- Videos Page -->
+            <div class="page" id="page-videos">
+                <div class="page-header">
+                    <h1>&#127909; Video Monitor</h1>
+                    <p>Track your uploads and their performance</p>
+                </div>
+                <div class="card">
+                    <div id="videos-list">
+                        <div style="color:var(--text3)">Loading videos...</div>
+                    </div>
+                    <button class="btn btn-outline btn-sm" style="margin-top:12px" onclick="loadVideos()">&#128260;
+                        Refresh</button>
+                </div>
+            </div>
+
+            <!-- Analytics Page -->
+            <div class="page" id="page-analytics">
+                <div class="page-header">
+                    <h1>&#128200; Analytics</h1>
+                    <p>Channel growth and video performance</p>
+                </div>
+                <div class="card">
+                    <div class="card-title"><span class="icon">&#128201;</span> Channel Overview</div>
+                    <div id="analytics-data">
+                        <div style="color:var(--text3)">Connect your YouTube channel to see analytics.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Suggestions Page -->
+            <div class="page" id="page-ai">
+                <div class="page-header">
+                    <h1>&#129302; AI Content Suggestions</h1>
+                    <p>Gemini-powered trending topic and title ideas</p>
+                </div>
+                <div class="card">
+                    <div class="card-title"><span class="icon">&#128161;</span> Get Trending Topics</div>
+                    <div class="input-group"><label class="input-label">Topic/Region</label><input class="input"
+                            id="ai-topic" value="India"></div>
+                    <button class="btn btn-primary" onclick="getSuggestions()">&#129302; Generate Suggestions</button>
+                    <div id="ai-results" style="margin-top:16px"></div>
+                </div>
+            </div>
+
+            <!-- Output Files Page -->
+            <div class="page" id="page-outputs">
+                <div class="page-header">
+                    <h1>&#128193; Output Files</h1>
+                    <p>Generated videos, thumbnails, and scripts</p>
+                </div>
+                <div class="card">
+                    <div id="outputs-list">
+                        <div style="color:var(--text3)">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API Keys Page -->
+            <div class="page" id="page-keys">
+                <div class="page-header">
+                    <h1>&#128273; API Keys Setup</h1>
+                    <p>All keys are 100% FREE — no credit card needed</p>
+                </div>
+                <div class="card">
+                    <div class="card-title"><span class="icon">&#128274;</span> Configure Keys</div>
+                    <div class="input-group"><label class="input-label"><span class="dot dot-green"
+                                id="dot-gemini"></span> Gemini API Key <a href="https://aistudio.google.com/apikey"
+                                target="_blank" style="color:var(--primary);font-size:11px;margin-left:8px">Get Free Key
+                                &#8599;</a></label>
+                        <input class="input" id="key-gemini" placeholder="Paste Gemini API key..." type="password">
+                    </div>
+                    <div class="input-group"><label class="input-label"><span class="dot dot-green"
+                                id="dot-yt-id"></span> YouTube Client ID <a
+                                href="https://console.cloud.google.com/apis/library/youtube.googleapis.com"
+                                target="_blank" style="color:var(--primary);font-size:11px;margin-left:8px">Setup Free
+                                &#8599;</a></label>
+                        <input class="input" id="key-yt-id" placeholder="Paste YouTube Client ID..." type="password">
+                    </div>
+                    <div class="input-group"><label class="input-label"><span class="dot dot-green"
+                                id="dot-yt-secret"></span> YouTube Client Secret</label>
+                        <input class="input" id="key-yt-secret" placeholder="Paste YouTube Client Secret..."
+                            type="password">
+                    </div>
+                    <div class="input-group"><label class="input-label"><span class="dot dot-green"
+                                id="dot-tg-token"></span> Telegram Bot Token <a href="https://t.me/BotFather"
+                                target="_blank" style="color:var(--primary);font-size:11px;margin-left:8px">Create Free
+                                Bot &#8599;</a></label>
+                        <input class="input" id="key-tg-token" placeholder="Paste Telegram Bot Token..."
+                            type="password">
+                    </div>
+                    <div class="input-group"><label class="input-label"><span class="dot dot-green"
+                                id="dot-tg-chat"></span> Telegram Chat ID <a href="https://t.me/userinfobot"
+                                target="_blank" style="color:var(--primary);font-size:11px;margin-left:8px">Get Chat ID
+                                &#8599;</a></label>
+                        <input class="input" id="key-tg-chat" placeholder="Paste Chat ID...">
+                    </div>
+                    <div class="input-group"><label class="input-label"><span class="dot dot-green"
+                                id="dot-wa-phone"></span> WhatsApp Phone <a
+                                href="https://www.callmebot.com/blog/free-api-whatsapp-messages/" target="_blank"
+                                style="color:var(--primary);font-size:11px;margin-left:8px">Setup CallMeBot
+                                &#8599;</a></label>
+                        <input class="input" id="key-wa-phone" placeholder="919876543210">
+                    </div>
+                    <div class="input-group"><label class="input-label"><span class="dot dot-green"
+                                id="dot-wa-key"></span> WhatsApp API Key</label>
+                        <input class="input" id="key-wa-key" placeholder="CallMeBot API key">
+                    </div>
+                    <button class="btn btn-success" onclick="saveKeys()">&#128190; Save All Keys</button>
+                </div>
+                <div class="card">
+                    <div class="card-title"><span class="icon">&#128176;</span> Cost Summary</div>
+                    <table class="table">
+                        <tr>
+                            <th>Service</th>
+                            <th>Free Limit</th>
+                            <th>Daily Usage</th>
+                        </tr>
+                        <tr>
+                            <td>Google News RSS</td>
+                            <td>Unlimited</td>
+                            <td>~20 requests</td>
+                        </tr>
+                        <tr>
+                            <td>Gemini API</td>
+                            <td>15 RPM / 1M tokens</td>
+                            <td>1 request</td>
+                        </tr>
+                        <tr>
+                            <td>edge-tts</td>
+                            <td>Unlimited</td>
+                            <td>1 generation</td>
+                        </tr>
+                        <tr>
+                            <td>YouTube API</td>
+                            <td>10,000 units/day</td>
+                            <td>~3,200 units</td>
+                        </tr>
+                        <tr>
+                            <td>Telegram Bot</td>
+                            <td>Unlimited</td>
+                            <td>~3 messages</td>
+                        </tr>
+                        <tr>
+                            <td>WhatsApp (CallMeBot)</td>
+                            <td>Unlimited</td>
+                            <td>~3 messages</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- System Health Page -->
+            <div class="page" id="page-health">
+                <div class="page-header">
+                    <h1>&#9889; System Health</h1>
+                    <p>Module status and system diagnostics</p>
+                </div>
+                <div class="card">
+                    <div id="health-data">
+                        <div style="color:var(--text3)">Loading...</div>
+                    </div>
+                    <button class="btn btn-outline btn-sm" style="margin-top:12px" onclick="loadHealth()">&#128260;
+                        Refresh</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const API = '';
+
+        // ── Navigation ──────────────────────────────────────────────
+        function showPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('page-' + id).classList.add('active');
+            event.target.closest('.nav-item')?.classList.add('active');
+            if (id === 'news') loadNews();
+            if (id === 'health') loadHealth();
+            if (id === 'outputs') loadOutputs();
+            if (id === 'keys') loadKeyStatus();
+            if (id === 'channel') loadChannel();
+            if (id === 'videos') loadVideos();
+            if (id === 'setup') loadWizardStatus();
+        }
+
+        function toast(msg, dur = 3000) {
+            const t = document.getElementById('toast');
+            t.textContent = msg; t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', dur);
+        }
+
+        // ── API Helpers ─────────────────────────────────────────────
+        async function api(path, opts = {}) {
+            try {
+                const r = await fetch(API + path, { headers: { 'Content-Type': 'application/json' }, ...opts });
+                return await r.json();
+            } catch (e) { return { status: 'error', message: e.message }; }
+        }
+
+        // ── Dashboard ───────────────────────────────────────────────
+        async function loadDashboard() {
+            const [keys, health, pipe] = await Promise.all([
+                api('/api/keys/status'), api('/api/system/health'), api('/api/pipeline/status')
+            ]);
+            const keyCount = [keys.gemini, keys.youtube_id, keys.youtube_secret, keys.telegram_token, keys.telegram_chat].filter(Boolean).length;
+            document.getElementById('dash-keys').textContent = keyCount + '/5';
+            document.getElementById('dash-pipeline').textContent = pipe.status?.charAt(0).toUpperCase() + pipe.status?.slice(1) || 'Idle';
+            document.getElementById('dash-disk').textContent = health.output_size_mb || '0';
+            document.getElementById('keys-badge').style.display = keys.all_set ? 'none' : '';
+
+            let checklist = '';
+            checklist += `<div class="key-card"><div class="key-info"><span class="dot ${keys.all_set ? 'dot-green' : 'dot-yellow'}"></span><span>API Keys</span></div><span class="badge ${keys.all_set ? 'badge-ok' : 'badge-warn'}">${keys.all_set ? 'All Set' : keyCount + '/5'}</span></div>`;
+            checklist += `<div class="key-card"><div class="key-info"><span class="dot ${health.ffmpeg?.ok ? 'dot-green' : 'dot-red'}"></span><span>FFmpeg</span></div><span class="badge ${health.ffmpeg?.ok ? 'badge-ok' : 'badge-err'}">${health.ffmpeg?.ok ? 'Installed' : 'Missing'}</span></div>`;
+            checklist += `<div class="key-card"><div class="key-info"><span class="dot dot-green"></span><span>Python Modules</span></div><span class="badge badge-ok">Ready</span></div>`;
+            document.getElementById('setup-checklist').innerHTML = checklist;
+
+            // Quick news count
+            try { const n = await api('/api/news/preview'); document.getElementById('dash-news').textContent = n.count || '0'; } catch (e) { }
+        }
+
+        // ── Keys ────────────────────────────────────────────────────
+        async function loadKeyStatus() {
+            const d = await api('/api/keys/status');
+            setDot('dot-gemini', d.gemini); setDot('dot-yt-id', d.youtube_id);
+            setDot('dot-yt-secret', d.youtube_secret); setDot('dot-tg-token', d.telegram_token);
+            setDot('dot-tg-chat', d.telegram_chat);
+        }
+        function setDot(id, ok) { const e = document.getElementById(id); if (e) { e.className = 'dot ' + (ok ? 'dot-green' : 'dot-red'); } }
+
+        async function saveKeys() {
+            const data = {
+                gemini_api_key: document.getElementById('key-gemini').value,
+                youtube_client_id: document.getElementById('key-yt-id').value,
+                youtube_client_secret: document.getElementById('key-yt-secret').value,
+                telegram_bot_token: document.getElementById('key-tg-token').value,
+                telegram_chat_id: document.getElementById('key-tg-chat').value,
+                whatsapp_phone: document.getElementById('key-wa-phone').value,
+                whatsapp_api_key: document.getElementById('key-wa-key').value,
+            };
+            await api('/api/keys/save', { method: 'POST', body: JSON.stringify(data) });
+            toast('Keys saved to .env!');
+            loadKeyStatus();
+            loadDashboard();
+        }
+
+        // ── News ────────────────────────────────────────────────────
+        async function loadNews() {
+            document.getElementById('news-list').innerHTML = '<div style="color:var(--text3)">Fetching news...</div>';
+            const d = await api('/api/news/preview');
+            if (d.articles) {
+                document.getElementById('news-list').innerHTML = d.articles.map((a, i) =>
+                    `<div class="news-item"><div class="news-num">${i + 1}</div><div><div class="news-title">${a.title}</div><div class="news-source">${a.source || 'Unknown'} &middot; ${a.summary?.substring(0, 120) || ''}...</div></div></div>`
+                ).join('');
+            } else {
+                document.getElementById('news-list').innerHTML = `<div style="color:var(--red)">${d.message || 'Error fetching news'}</div>`;
+            }
+        }
+
+        // ── Pipeline ────────────────────────────────────────────────
+        async function runPipeline(dryRun) {
+            await api('/api/pipeline/run', { method: 'POST', body: JSON.stringify({ dry_run: dryRun, start_step: 1, end_step: 8 }) });
+            toast(dryRun ? 'Dry run started!' : 'Full pipeline started!');
+            showPage('pipeline');
+            pollPipeline();
+        }
+        async function runPipelineCustom(dryRun) {
+            const s = parseInt(document.getElementById('step-start').value);
+            const e = parseInt(document.getElementById('step-end').value);
+            await api('/api/pipeline/run', { method: 'POST', body: JSON.stringify({ dry_run: dryRun, start_step: s, end_step: e }) });
+            toast('Pipeline started!');
+            pollPipeline();
+        }
+        async function stopPipeline() { await api('/api/pipeline/stop', { method: 'POST' }); toast('Stop requested'); }
+
+        let pipeInterval = null;
+        function pollPipeline() {
+            if (pipeInterval) clearInterval(pipeInterval);
+            pipeInterval = setInterval(async () => {
+                const d = await api('/api/pipeline/status');
+                updatePipelineUI(d);
+                if (d.status !== 'running') clearInterval(pipeInterval);
+            }, 2000);
+        }
+        function updatePipelineUI(d) {
+            const names = ['News', 'Script', 'Voice', 'Video', 'Thumb', 'Upload', 'Cross', 'Notify'];
+            document.getElementById('pipe-status').textContent = d.status;
+            document.getElementById('pipe-status').className = 'badge ' + ({ running: 'badge-info', completed: 'badge-ok', failed: 'badge-err', idle: 'badge-info' }[d.status] || 'badge-info');
+            document.getElementById('pipe-step-name').textContent = d.step_name || '';
+            let steps = '', labels = '';
+            for (let i = 1; i <= 8; i++) {
+                const cls = i < d.current_step ? 'done' : i === d.current_step && d.status === 'running' ? 'active' : '';
+                steps += `<div class="pipeline-step ${cls}"></div>`;
+                labels += `<div class="step-label ${cls}">${names[i - 1]}</div>`;
+            }
+            document.getElementById('pipe-steps').innerHTML = steps;
+            document.getElementById('pipe-labels').innerHTML = labels;
+            if (d.log?.length) {
+                document.getElementById('pipe-log').innerHTML = d.log.slice(-30).map(l =>
+                    `<div class="log-line"><span class="log-time">${l.time}</span>${l.msg}</div>`
+                ).join('');
+            }
+        }
+
+        // ── Channel ─────────────────────────────────────────────────
+        async function loadChannel() {
+            const d = await api('/api/channel/info');
+            if (d.channel && !d.channel.error) {
+                const c = d.channel;
+                document.getElementById('channel-info').innerHTML = `
+            <div class="stats-grid"><div class="stat-card purple"><div class="stat-label">Channel</div><div class="stat-value" style="font-size:18px">${c.title}</div></div>
+            <div class="stat-card pink"><div class="stat-label">Subscribers</div><div class="stat-value">${Number(c.subscribers).toLocaleString()}</div></div>
+            <div class="stat-card green"><div class="stat-label">Views</div><div class="stat-value">${Number(c.views).toLocaleString()}</div></div>
+            <div class="stat-card blue"><div class="stat-label">Videos</div><div class="stat-value">${c.videos}</div></div></div>
+            <a href="${c.url}" target="_blank" class="btn btn-outline btn-sm">Open Channel &#8599;</a>`;
+            } else {
+                document.getElementById('channel-info').innerHTML = `<div style="color:var(--text2)">Channel not connected. Please set up YouTube API keys first, then run the pipeline to authenticate via OAuth.</div>`;
+            }
+        }
+        async function updateBranding() {
+            const d = await api('/api/channel/branding', {
+                method: 'POST', body: JSON.stringify({
+                    title: document.getElementById('brand-title').value,
+                    description: document.getElementById('brand-desc').value,
+                    keywords: document.getElementById('brand-keywords').value,
+                })
+            });
+            toast(d.status === 'ok' ? 'Branding updated!' : d.message);
+        }
+        async function createPlaylist() {
+            const d = await api('/api/channel/create-playlist', { method: 'POST' });
+            toast(d.status === 'ok' ? 'Playlist created!' : d.message);
+        }
+
+        // ── Videos ──────────────────────────────────────────────────
+        async function loadVideos() {
+            const d = await api('/api/channel/videos');
+            if (d.videos?.length) {
+                document.getElementById('videos-list').innerHTML = `<table class="table"><tr><th>Title</th><th>Status</th><th>Published</th><th>Link</th></tr>` +
+                    d.videos.map(v => `<tr><td>${v.title}</td><td><span class="badge ${v.status === 'public' ? 'badge-ok' : 'badge-warn'}">${v.status}</span></td><td>${new Date(v.published).toLocaleDateString()}</td><td><a href="${v.url}" target="_blank" style="color:var(--primary)">Watch &#8599;</a></td></tr>`).join('') + '</table>';
+            } else {
+                document.getElementById('videos-list').innerHTML = '<div style="color:var(--text2)">No videos found. Run the pipeline to create your first video!</div>';
+            }
+        }
+
+        // ── AI Suggestions ──────────────────────────────────────────
+        async function getSuggestions() {
+            document.getElementById('ai-results').innerHTML = '<div style="color:var(--text2)">Generating suggestions...</div>';
+            const d = await api('/api/ai/suggest-topics', { method: 'POST', body: JSON.stringify({ topic: document.getElementById('ai-topic').value }) });
+            if (d.suggestions) {
+                document.getElementById('ai-results').innerHTML = d.suggestions.map((s, i) =>
+                    `<div class="news-item"><div class="news-num">${i + 1}</div><div><div class="news-title">${s.title}</div><div class="news-source">Interest: <span class="badge ${s.interest === 'high' ? 'badge-ok' : s.interest === 'medium' ? 'badge-warn' : 'badge-info'}">${s.interest}</span> &middot; ${s.reason || ''}</div></div></div>`
+                ).join('');
+            } else {
+                document.getElementById('ai-results').innerHTML = `<div style="color:var(--red)">${d.message || 'Error'}</div>`;
+            }
+        }
+
+        // ── Outputs ─────────────────────────────────────────────────
+        async function loadOutputs() {
+            const d = await api('/api/outputs');
+            if (d.outputs?.length) {
+                document.getElementById('outputs-list').innerHTML = d.outputs.map(o =>
+                    `<div class="card" style="margin-bottom:12px">
+                        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+                            <span>${o.date} <span class="badge badge-info">${o.file_count} files</span></span>
+                            <button class="btn btn-primary btn-sm" onclick="triggerManualUpload('${o.date}')">Upload to YouTube</button>
+                        </div>` +
+                    o.files.map(f => `<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.03)"><span>${f.name}</span><span style="color:var(--text3)">${f.size_kb} KB</span></div>`).join('') + '</div>'
+                ).join('');
+            } else {
+                document.getElementById('outputs-list').innerHTML = '<div style="color:var(--text2)">No outputs yet. Run the pipeline!</div>';
+            }
+        }
+
+        async function triggerManualUpload(date) {
+            const res = await api(`/api/outputs/${date}/upload`, { method: 'POST' });
+            if (res.status === 'started') {
+                toast('Manual upload started! Check Pipeline for progress.');
+                showPage('pipeline');
+                pollPipeline();
+            } else {
+                toast('Error: ' + res.message);
+            }
+        }
+
+        // ── Health ──────────────────────────────────────────────────
+        async function loadHealth() {
+            const d = await api('/api/system/health');
+            let html = '';
+            const items = [
+                ['FFmpeg', d.ffmpeg?.ok, d.ffmpeg?.version || 'Not installed'],
+                ['feedparser', d.feedparser?.ok, 'RSS parsing'],
+                ['edge_tts', d.edge_tts?.ok, 'Free voiceover'],
+                ['Pillow (PIL)', d.PIL?.ok, 'Image processing'],
+                ['MoviePy', d.moviepy?.ok, 'Video assembly'],
+                ['Gemini AI', d['google.generativeai']?.ok, 'AI script writer'],
+            ];
+            items.forEach(([name, ok, desc]) => {
+                html += `<div class="key-card"><div class="key-info"><span class="dot ${ok ? 'dot-green' : 'dot-red'}"></span><span>${name}</span><span style="color:var(--text3);font-size:12px;margin-left:8px">${desc}</span></div><span class="badge ${ok ? 'badge-ok' : 'badge-err'}">${ok ? 'OK' : 'Missing'}</span></div>`;
+            });
+            html += `<div class="key-card"><div class="key-info"><span class="dot dot-green"></span><span>Disk Space</span></div><span style="color:var(--text2);font-size:13px">${d.disk?.free_gb} GB free / ${d.disk?.total_gb} GB total</span></div>`;
+            html += `<div class="key-card"><div class="key-info"><span class="dot dot-green"></span><span>Output Files</span></div><span style="color:var(--text2);font-size:13px">${d.output_size_mb} MB</span></div>`;
+            document.getElementById('health-data').innerHTML = html;
+        }
+
+        // ── Setup Wizard ────────────────────────────────────────────
+        function toggleStep(n) {
+            const el = document.getElementById('ws-' + n);
+            el.classList.toggle('open');
+        }
+        async function loadWizardStatus() {
+            const d = await api('/api/keys/status');
+            const steps = [
+                { id: 1, done: d.gemini, dots: ['wdot-gemini'] },
+                { id: 2, done: d.youtube_id && d.youtube_secret, dots: ['wdot-yt-id', 'wdot-yt-secret'] },
+                { id: 3, done: d.telegram_token && d.telegram_chat, dots: ['wdot-tg-token', 'wdot-tg-chat'] },
+                { id: 4, done: d.whatsapp_phone && d.whatsapp_key, dots: ['wdot-wa-phone', 'wdot-wa-key'] },
+                { id: 5, done: false, dots: [] },
+            ];
+            let prog = '';
+            let firstIncomplete = 5;
+            steps.forEach(s => {
+                const el = document.getElementById('ws-' + s.id);
+                if (!el) return;
+                el.classList.remove('completed', 'active-step');
+                if (s.done) { el.classList.add('completed'); }
+                else if (s.id < firstIncomplete) { firstIncomplete = s.id; }
+                s.dots.forEach(dId => { const dot = document.getElementById(dId); if (dot) dot.className = 'dot ' + (s.done ? 'dot-green' : 'dot-red'); });
+                prog += `<div class="progress-seg ${s.done ? 'done' : s.id === firstIncomplete ? 'current' : ''}"></div>`;
+            });
+            const activeEl = document.getElementById('ws-' + firstIncomplete);
+            if (activeEl) activeEl.classList.add('active-step');
+            document.getElementById('wizard-progress').innerHTML = prog;
+            const badge = document.getElementById('setup-badge');
+            const doneCount = steps.filter(s => s.done).length;
+            if (badge) { badge.textContent = doneCount >= 4 ? 'Done' : doneCount + '/4'; badge.style.background = doneCount >= 4 ? 'var(--green)' : 'var(--primary)'; }
+        }
+        async function saveWizardKey(type) {
+            let data = {};
+            if (type === 'gemini') data = { gemini_api_key: document.getElementById('wkey-gemini').value };
+            if (type === 'youtube') data = { youtube_client_id: document.getElementById('wkey-yt-id').value, youtube_client_secret: document.getElementById('wkey-yt-secret').value };
+            if (type === 'telegram') data = { telegram_bot_token: document.getElementById('wkey-tg-token').value, telegram_chat_id: document.getElementById('wkey-tg-chat').value };
+            if (type === 'whatsapp') data = { whatsapp_phone: document.getElementById('wkey-wa-phone').value, whatsapp_api_key: document.getElementById('wkey-wa-key').value };
+            await api('/api/keys/save', { method: 'POST', body: JSON.stringify(data) });
+            toast('Saved! Moving to next step...');
+            loadWizardStatus();
+            loadDashboard();
+        }
+
+        // ── Init ────────────────────────────────────────────────────
+        loadDashboard();
+    </script>
+</body>
+
+</html>
