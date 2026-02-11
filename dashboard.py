@@ -11,7 +11,7 @@ import sys
 import subprocess
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 # --- PILLOW COMPATIBILITY MONKEY-PATCH ---
@@ -29,6 +29,13 @@ from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+try:
+    from apscheduler.schedulers.background import BackgroundScheduler
+    from apscheduler.triggers.cron import CronTrigger
+    HAS_SCHEDULER = True
+except ImportError:
+    HAS_SCHEDULER = False
+
 # Fix Windows encoding
 sys.stdout.reconfigure(encoding='utf-8')
 
@@ -39,7 +46,19 @@ BASE_DIR = Path(__file__).parent
 OUTPUT_DIR = BASE_DIR / "output"
 ENV_FILE = BASE_DIR / ".env"
 
-app = FastAPI(title="YouTube Current Affairs Platform", version="1.0")
+app = FastAPI(title="YouTube Current Affairs Platform", version="2.0")
+
+scheduler_state = {
+    "enabled": False,
+    "schedule_time": "06:00",
+    "dry_run": False,
+    "last_run": None,
+    "next_run": None,
+    "history": [],
+}
+
+_scheduler = None
+SCHEDULE_FILE = BASE_DIR / "schedule_config.json"
 
 # ── State ────────────────────────────────────────────────────
 pipeline_state = {
@@ -77,6 +96,11 @@ class PipelineRequest(BaseModel):
 
 class ContentSuggestion(BaseModel):
     topic: str = "India"
+
+class ScheduleRequest(BaseModel):
+    enabled: bool = True
+    time: str = "06:00"
+    dry_run: bool = False
 
 
 # ── API Key Management ──────────────────────────────────────
@@ -408,18 +432,232 @@ def optimize_title(video_id: str):
         return {"status": "error", "message": str(e)}
 
 
-# ── Schedule Info ────────────────────────────────────────────
-@app.get("/api/schedule/info")
-def schedule_info():
-    """Get scheduling command for Windows Task Scheduler."""
-    cmd = f'schtasks /create /tn "YouTube_CurrentAffairs" /tr "python {BASE_DIR / "main.py"}" /sc daily /st 06:00'
-    check = subprocess.run(["schtasks", "/query", "/tn", "YouTube_CurrentAffairs"],
-                           capture_output=True, text=True)
-    return {
-        "scheduled": check.returncode == 0,
-        "command": cmd,
-        "time": "06:00 AM daily",
+# ── Scheduler / Automation ────────────────────────────────────
+
+def _load_schedule_config():
+    if SCHEDULE_FILE.exists():
+        try:
+            data = json.loads(SCHEDULE_FILE.read_text(encoding="utf-8"))
+            scheduler_state.update(data)
+        except Exception:
+            pass
+
+def _save_schedule_config():
+    data = {
+        "enabled": scheduler_state["enabled"],
+        "schedule_time": scheduler_state["schedule_time"],
+        "dry_run": scheduler_state["dry_run"],
     }
+    SCHEDULE_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+def _scheduled_pipeline_run():
+    now = datetime.now()
+    scheduler_state["last_run"] = now.isoformat()
+    scheduler_state["history"].append({
+        "time": now.isoformat(),
+        "status": "started",
+    })
+    if len(scheduler_state["history"]) > 50:
+        scheduler_state["history"] = scheduler_state["history"][-50:]
+    _run_pipeline_bg(scheduler_state["dry_run"], 1, 8)
+
+def _start_scheduler():
+    global _scheduler
+    if not HAS_SCHEDULER:
+        logger.warning("APScheduler not installed, scheduling disabled")
+        return False
+    if _scheduler and _scheduler.running:
+        _scheduler.shutdown(wait=False)
+    _scheduler = BackgroundScheduler()
+    t = scheduler_state["schedule_time"]
+    parts = t.split(":")
+    hour = int(parts[0])
+    minute = int(parts[1]) if len(parts) > 1 else 0
+    _scheduler.add_job(
+        _scheduled_pipeline_run,
+        CronTrigger(hour=hour, minute=minute),
+        id="daily_pipeline",
+        replace_existing=True,
+    )
+    _scheduler.start()
+    job = _scheduler.get_job("daily_pipeline")
+    if job and job.next_run_time:
+        scheduler_state["next_run"] = job.next_run_time.isoformat()
+    logger.info(f"Scheduler started: daily at {t}")
+    return True
+
+def _stop_scheduler():
+    global _scheduler
+    if _scheduler and _scheduler.running:
+        _scheduler.shutdown(wait=False)
+        _scheduler = None
+    scheduler_state["next_run"] = None
+
+@app.get("/api/schedule/status")
+def get_schedule_status():
+    return scheduler_state
+
+@app.post("/api/schedule/set")
+def set_schedule(req: ScheduleRequest):
+    scheduler_state["enabled"] = req.enabled
+    scheduler_state["schedule_time"] = req.time
+    scheduler_state["dry_run"] = req.dry_run
+    _save_schedule_config()
+    if req.enabled:
+        ok = _start_scheduler()
+        if not ok:
+            return {"status": "error", "message": "APScheduler not installed. Run: pip install apscheduler"}
+        return {"status": "ok", "message": f"Scheduled daily at {req.time}", "next_run": scheduler_state.get("next_run")}
+    else:
+        _stop_scheduler()
+        return {"status": "ok", "message": "Scheduler disabled"}
+
+@app.post("/api/schedule/run-now")
+def run_now(bg: BackgroundTasks):
+    if pipeline_state["status"] == "running":
+        raise HTTPException(400, "Pipeline is already running")
+    bg.add_task(_scheduled_pipeline_run)
+    return {"status": "started", "message": "Pipeline triggered manually"}
+
+
+# ── YouTube OAuth Diagnostics ─────────────────────────────────
+
+@app.get("/api/youtube/auth-status")
+def youtube_auth_status():
+    token_file = BASE_DIR / "token.pickle"
+    client_secrets = BASE_DIR / "client_secrets.json"
+    env = _load_env()
+    client_id = env.get("YOUTUBE_CLIENT_ID", "")
+    client_secret = env.get("YOUTUBE_CLIENT_SECRET", "")
+    placeholders = ["", "your_youtube_client_id_here", "your_youtube_client_secret_here"]
+
+    has_credentials = client_id not in placeholders and client_secret not in placeholders
+    has_token = token_file.exists()
+    has_client_secrets = client_secrets.exists()
+    token_valid = False
+    token_expired = False
+    token_error = None
+
+    if has_token:
+        try:
+            import pickle
+            with open(token_file, "rb") as f:
+                creds = pickle.load(f)
+            token_valid = creds.valid if hasattr(creds, 'valid') else False
+            token_expired = creds.expired if hasattr(creds, 'expired') else False
+            has_refresh = bool(creds.refresh_token) if hasattr(creds, 'refresh_token') else False
+            if not token_valid and token_expired and has_refresh:
+                try:
+                    from google.auth.transport.requests import Request
+                    creds.refresh(Request())
+                    token_valid = True
+                    with open(token_file, "wb") as f:
+                        pickle.dump(creds, f)
+                except Exception as e:
+                    token_error = str(e)
+        except Exception as e:
+            token_error = str(e)
+
+    return {
+        "has_credentials": has_credentials,
+        "has_token": has_token,
+        "has_client_secrets": has_client_secrets,
+        "token_valid": token_valid,
+        "token_expired": token_expired,
+        "token_error": token_error,
+        "ready": has_credentials and has_token and token_valid,
+    }
+
+@app.post("/api/youtube/generate-auth-url")
+def generate_auth_url():
+    env = _load_env()
+    client_id = env.get("YOUTUBE_CLIENT_ID", "")
+    client_secret = env.get("YOUTUBE_CLIENT_SECRET", "")
+    if not client_id or client_id == "your_youtube_client_id_here":
+        return {"status": "error", "message": "YouTube Client ID not set. Add it in API Keys first."}
+
+    client_secrets_file = BASE_DIR / "client_secrets.json"
+    secrets = {
+        "installed": {
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "redirect_uris": ["http://localhost"]
+        }
+    }
+    with open(client_secrets_file, "w") as f:
+        json.dump(secrets, f, indent=2)
+
+    scopes = [
+        "https://www.googleapis.com/auth/youtube",
+        "https://www.googleapis.com/auth/youtube.upload",
+        "https://www.googleapis.com/auth/youtube.force-ssl",
+    ]
+    from urllib.parse import urlencode
+    params = {
+        "client_id": client_id,
+        "redirect_uri": "http://localhost",
+        "response_type": "code",
+        "scope": " ".join(scopes),
+        "access_type": "offline",
+        "prompt": "consent",
+    }
+    auth_url = f"https://accounts.google.com/o/oauth2/auth?{urlencode(params)}"
+    return {
+        "status": "ok",
+        "auth_url": auth_url,
+        "message": "Open this URL in your browser to authorize. After authorizing, you will be redirected to localhost with a code parameter.",
+    }
+
+@app.post("/api/youtube/exchange-code")
+def exchange_code(data: dict):
+    code = data.get("code", "").strip()
+    if not code:
+        return {"status": "error", "message": "No authorization code provided"}
+
+    env = _load_env()
+    client_id = env.get("YOUTUBE_CLIENT_ID", "")
+    client_secret = env.get("YOUTUBE_CLIENT_SECRET", "")
+
+    try:
+        import requests as req
+        resp = req.post("https://oauth2.googleapis.com/token", data={
+            "code": code,
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "redirect_uri": "http://localhost",
+            "grant_type": "authorization_code",
+        }, timeout=30)
+        token_data = resp.json()
+
+        if "error" in token_data:
+            return {"status": "error", "message": f"{token_data.get('error')}: {token_data.get('error_description', '')}"}
+
+        from google.oauth2.credentials import Credentials
+        creds = Credentials(
+            token=token_data["access_token"],
+            refresh_token=token_data.get("refresh_token"),
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id=client_id,
+            client_secret=client_secret,
+            scopes=token_data.get("scope", "").split(" "),
+        )
+        import pickle
+        token_file = BASE_DIR / "token.pickle"
+        with open(token_file, "wb") as f:
+            pickle.dump(creds, f)
+
+        return {"status": "ok", "message": "YouTube authorized successfully! Token saved."}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.post("/api/youtube/reset-token")
+def reset_youtube_token():
+    token_file = BASE_DIR / "token.pickle"
+    if token_file.exists():
+        token_file.unlink()
+    return {"status": "ok", "message": "Token removed. You will need to re-authorize."}
 
 
 # ── Helpers ──────────────────────────────────────────────────
@@ -443,9 +681,15 @@ def _save_env(values: dict):
         f"YOUTUBE_CLIENT_SECRET={values.get('YOUTUBE_CLIENT_SECRET', '')}",
         f"TELEGRAM_BOT_TOKEN={values.get('TELEGRAM_BOT_TOKEN', '')}",
         f"TELEGRAM_CHAT_ID={values.get('TELEGRAM_CHAT_ID', '')}",
+        f"WHATSAPP_PHONE={values.get('WHATSAPP_PHONE', '')}",
+        f"WHATSAPP_API_KEY={values.get('WHATSAPP_API_KEY', '')}",
         "",
     ]
     ENV_FILE.write_text("\n".join(lines), encoding="utf-8")
+
+def _log(msg: str):
+    pipeline_state["log"].append({"time": datetime.now().strftime("%H:%M:%S"), "msg": msg})
+    logger.info(msg)
 
 def _run_pipeline_bg(dry_run: bool, start: int, end: int):
     """Run pipeline in background thread."""
@@ -506,6 +750,14 @@ def dashboard_page():
     return HTMLResponse("<h1>Dashboard HTML not found. Create templates/dashboard.html</h1>")
 
 
+@app.on_event("startup")
+def on_startup():
+    _load_schedule_config()
+    if scheduler_state["enabled"] and HAS_SCHEDULER:
+        _start_scheduler()
+        logger.info(f"Auto-started scheduler: daily at {scheduler_state['schedule_time']}")
+
+
 if __name__ == "__main__":
     import uvicorn
     import socket
@@ -519,11 +771,7 @@ if __name__ == "__main__":
         print("\n" + "!" * 60)
         print(f"  ERROR: Port {port} is already in use!")
         print(f"  A version of the dashboard might already be running.")
-        print(f"  To fix this on Windows, run:")
-        print(f"    stop-process -id (get-netstat -localport {port}).owningprocess -force")
         print("!" * 60 + "\n")
-        
-        # Try fallback port
         port = 8001
         print(f"  Attempting to start on fallback port: {port}...")
 
@@ -536,4 +784,4 @@ if __name__ == "__main__":
     try:
         uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
     except Exception as e:
-        print(f"\n❌ Could not start server: {e}")
+        print(f"\n Could not start server: {e}")
